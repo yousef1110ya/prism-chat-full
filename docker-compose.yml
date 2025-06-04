@@ -1,0 +1,24 @@
+
+services:
+  ejabberd:
+    build: .
+    container_name: ejabberd
+    ports:
+      - "5222:5222"
+      - "5280:5280"
+    volumes:
+      # - ./auth/check_pass_null.pl:/home/ejabberd/check_pass_null.pl
+      - ./docker/ejabberd.yml:/home/ejabberd/conf/ejabberd.yml
+      - ejabberd_data:/home/ejabberd
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - EJABBERD_DOMAIN=localhost
+    networks:
+      - xmppnet
+
+networks:
+  xmppnet:
+    driver: bridge
+
+volumes:
+  ejabberd_data:

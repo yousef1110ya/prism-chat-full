@@ -1,0 +1,68 @@
+hosts:
+  - "localhost"
+
+loglevel: 5
+
+listen:
+  -
+    port: 5222
+    module: ejabberd_c2s
+    max_stanza_size: 65536
+    shaper: c2s_shaper
+    access: local
+    starttls: false  
+
+acl:
+  local:
+    user_regexp: ""
+
+access_rules:
+  local:
+    allow: all
+  c2s:
+    deny: all
+  announce:
+    allow: admin
+  configure:
+    allow: admin
+  muc_create:
+    allow: local
+  pubsub_createnode:
+    allow: local
+  register:
+    deny: all
+
+shaper:
+  normal: 1000
+  fast: 50000
+
+shaper_rules:
+  max_user_sessions: 10
+  max_user_offline_messages:
+    - 5000
+    - 1h
+  c2s_shaper:
+    - fast
+  s2s_shaper:
+    - fast
+
+# auth_method: jwt
+# jwt_key: "/home/ejabberd/auth/secret.jwk"
+# jwt_jid_field: jid
+# for using the external methode we need to use the following
+auth_method: [external]
+extauth_program: "/home/ejabberd/check_pass_null.pl"
+auth_use_cache: false
+
+modules:
+  mod_admin_extra: {}
+  mod_mam: {}
+  mod_roster: {}
+  mod_vcard: {}
+  mod_disco: {}
+
+# Optional admin ACL if needed:
+# acl:
+#   admin:
+#     user:
+#       - "admin@localhost"
