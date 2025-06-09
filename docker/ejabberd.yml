@@ -36,6 +36,19 @@ shaper:
   normal: 1000
   fast: 50000
 
+default_db: sql 
+
+sql_type: pgsql 
+# FIX: Changed to PostgreSQL service name
+sql_server: postgres-db
+sql_port: 5432 
+sql_database: ejabberd_db
+sql_username: ejabberd_user 
+sql_password: "1110ya" 
+sql_pool_size: 10 
+
+update_sql_schema: true
+
 shaper_rules:
   max_user_sessions: 10
   max_user_offline_messages:
@@ -46,23 +59,24 @@ shaper_rules:
   s2s_shaper:
     - fast
 
-# auth_method: jwt
-# jwt_key: "/home/ejabberd/auth/secret.jwk"
-# jwt_jid_field: jid
-# for using the external methode we need to use the following
 auth_method: [external]
 extauth_program: "/home/ejabberd/check_pass_null.pl"
 auth_use_cache: false
 
 modules:
+  mod_mam:
+    db_type: sql
+    default: always
+    assume_mam_usage: true
+    cache_life_time: 86400 
+    use_cache: true
+
+  mod_offline:
+    db_type: sql
+    access_max_user_messages: max_user_offline_messages
+
   mod_admin_extra: {}
-  mod_mam: {}
   mod_roster: {}
   mod_vcard: {}
   mod_disco: {}
-
-# Optional admin ACL if needed:
-# acl:
-#   admin:
-#     user:
-#       - "admin@localhost"
+  mod_adhoc: {}

@@ -1,12 +1,14 @@
-
 services:
   ejabberd:
     build: .
-    container_name: ejabberd
+    container_name: ejabberd_post
+    depends_on:
+      - postgres-db 
     ports:
       - "5222:5222"
       - "5280:5280"
     volumes:
+      # Uncomment when auth script is ready:
       # - ./auth/check_pass_null.pl:/home/ejabberd/check_pass_null.pl
       - ./docker/ejabberd.yml:/home/ejabberd/conf/ejabberd.yml
       - ejabberd_data:/home/ejabberd
@@ -16,9 +18,63 @@ services:
     networks:
       - xmppnet
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5280"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  postgres-db: 
+    image: postgres:16 
+    container_name: ejabberd-postgres 
+    restart: unless-stopped 
+    environment:
+      POSTGRES_DB: ejabberd_db 
+      POSTGRES_USER: ejabberd_user 
+      POSTGRES_PASSWORD: 1110ya
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+    networks:
+      - xmppnet
+    # Health check for PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ejabberd_user -d ejabberd_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  node-app:
+    build: ./node.js
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./node.js/uploads:/app/uploads
+      - ./node.js/server.js:/app/server.js
+    environment:
+      - PORT=3000
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: "redis:7-alpine"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+
 networks:
   xmppnet:
+    driver: bridge
+  app-network:
     driver: bridge
 
 volumes:
   ejabberd_data:
+  postgres_data:
+  redis-data:

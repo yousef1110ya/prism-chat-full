@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload & Private Call Test</title>
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .container { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    img { max-width: 100%; margin-top: 10px; }
+    input, button { padding: 8px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>Private Call Service Test</h1>
+
+  <div class="container">
+    <h2>User Registration</h2>
+    <input type="text" id="userId" placeholder="Your User ID">
+    <button onclick="registerUser()">Connect</button>
+    <div id="connectionStatus">Status: Not connected</div>
+  </div>
+
+  <div class="container">
+    <h2>Image Upload</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    <div id="uploadResult"></div>
+  </div>
+
+  <div class="container">
+    <h2>Private Call</h2>
+    <input type="text" id="targetUser" placeholder="Target User ID">
+    <input type="text" id="callerId" placeholder="Your Name">
+    <button onclick="startCall()">Start Call</button>
+    <div id="callStatus">Status: Idle</div>
+  </div>
+
+  <script>
+    let socket = null;
+    const userIdInput = document.getElementById('userId');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const uploadResult = document.getElementById('uploadResult');
+    const callStatus = document.getElementById('callStatus');
+    const targetUserInput = document.getElementById('targetUser');
+    const callerIdInput = document.getElementById('callerId');
+
+    function registerUser() {
+      const userId = userIdInput.value.trim();
+      if (!userId) return alert('Enter User ID');
+      
+      // Disconnect existing socket
+      if (socket) socket.disconnect();
+      
+      socket = io();
+      connectionStatus.textContent = 'Status: Connecting...';
+      
+      socket.on('connect', () => {
+        socket.emit('register', userId);
+      });
+      
+      socket.on('registered', (message) => {
+        connectionStatus.textContent = `Status: Connected as ${userId}`;
+        console.log('Registration:', message);
+      });
+      
+      socket.on('call', (data) => {
+        callStatus.innerHTML = `<strong>Incoming Call!</strong><br>
+                               From: ${data.caller}<br>
+                               Time: ${new Date(data.time).toLocaleTimeString()}<br>
+                               Message: ${data.message}`;
+      });
+      
+      socket.on('error', (error) => {
+        console.error('Socket error:', error);
+        callStatus.textContent = `Error: ${error}`;
+      });
+    }
+
+    function uploadFile() {
+      if (!socket || !socket.connected) return alert('Connect first');
+      
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files.length) return alert('Select a file first');
+      
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        uploadResult.innerHTML = `<strong>Uploaded URL:</strong> ${data.url}<br>
+                                  <img src="${data.url}" alt="Uploaded">`;
+      })
+      .catch(error => {
+        uploadResult.textContent = 'Upload failed: ' + error.message;
+      });
+    }
+
+    function startCall() {
+      if (!socket || !socket.connected) return alert('Connect first');
+      
+      const targetUserId = targetUserInput.value.trim();
+      const callerId = callerIdInput.value.trim();
+      
+      if (!targetUserId || !callerId) {
+        return alert('Enter both target user ID and your name');
+      }
+      
+      socket.emit('private-call', {
+        targetUserId,
+        caller: callerId
+      });
+      
+      callStatus.textContent = `Calling ${targetUserId}...`;
+    }
+  </script>
+</body>
+</html>
