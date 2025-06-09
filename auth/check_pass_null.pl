@@ -1,6 +1,14 @@
 #!/usr/bin/env perl
+use strict;
+use warnings;
 
-my $domain = $ARGV[0] || "example.com";
+use Dotenv;
+use JWT::Decode;
+
+my $domain = $ARGV[0] || "localhost";
+# loading .env file 
+Dotenv->load('.env');
+my $jwt_secret = $ENV{'JWT_SECRET'} or die "JWT_SECRET not set in .env\n";
 
 while (1) {
     my $buf = "";
@@ -10,7 +18,7 @@ while (1) {
     unless ($nread == 2) {
         print STDERR "Port closed or error reading length\n";
         exit;
-    }
+    }   
 
     my $len = unpack "n", $buf;
     $nread = sysread STDIN, $buf, $len;
@@ -23,7 +31,20 @@ while (1) {
 
     SWITCH: {
         $op eq 'auth' and do {
-            $result = 1;
+            my $decoded = eval {
+                jwt_decode(
+                token  => $password,
+                key    => $jwt_secret,
+                verify => 1,
+            );
+            };
+            if ($@) {
+                $result = 0;
+            } else {
+                $result = 1;
+            }
+           
+            
             last SWITCH;
         };
 

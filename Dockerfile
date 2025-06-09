@@ -8,7 +8,16 @@ RUN apk add --no-cache \
     perl-app-cpanminus \
     build-base \
     musl-dev \
-    linux-headers
+    linux-headers \ 
+    perl-json \
+    perl-mime-base64
+
+# Install required Perl modules from CPAN
+RUN cpanm --notest \
+    Dotenv \
+    JWT::Decode \
+    JSON \
+    MIME::Base64
 # RUN apk add --no-cache nodejs npm 
 
 # for auth script

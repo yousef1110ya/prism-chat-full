@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: ejabberd_db 
       POSTGRES_USER: ejabberd_user 
-      POSTGRES_PASSWORD: 1110ya
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data 
     networks:
